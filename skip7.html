@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Times Tables Skip Counting</title>
+<style>
+    body {
+        font-family: 'Comic Sans MS', cursive, sans-serif;
+        background-color: #ffffcc; /* Off-yellow */
+        margin: 0;
+        padding: 0;
+    }
+    #container {
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    h1 {
+        font-size: 36px;
+        margin-top: 0;
+    }
+    table {
+        margin: 20px auto;
+        border-collapse: collapse;
+        width: 100%; /* Make table fill container */
+    }
+    td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        font-size: 28px; /* Increased font size */
+        background-color: #f9f9f9; /* Light grey background */
+    }
+    input[type="text"] {
+        width: 40px;
+        text-align: center;
+        font-size: 24px;
+    }
+    #timer {
+        font-size: 24px;
+        margin-top: 20px;
+    }
+    #scoreScreen {
+        display: none;
+        font-size: 24px;
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+<div id="container">
+    <h1>Times Tables Skip Counting</h1>
+    <div style="overflow-x:auto;">
+        <table id="timesTable">
+            <!-- Table rows will be dynamically added using JavaScript -->
+        </table>
+    </div>
+    <div id="timer">Time remaining: <span id="timeDisplay">3:00</span></div>
+    <div id="scoreScreen">
+        <p>Your Score: <span id="score"></span></p>
+    </div>
+</div>
+
+<script>
+    const questions = [];
+    const maxQuestionsPerTable = 5; // Limit the number of questions per times table
+
+    // Generate questions for each times table
+    const tablesOrder = [10, 2, 5, 3, 4, 6, 8, 9, 7]; // Reordered tables
+    for (let i = 0; i < tablesOrder.length; i++) {
+        const tableNumber = tablesOrder[i];
+        let numbers = [];
+        for (let j = 2; j <= 10; j++) {
+            numbers.push(j);
+        }
+        shuffleArray(numbers);
+        for (let j = 0; j < numbers.length && j < maxQuestionsPerTable; j++) {
+            const missingNumber = numbers[j];
+            const correctAnswer = tableNumber * missingNumber;
+            let sequence = [];
+            for (let k = 1; k <= 10; k++) {
+                if (k === missingNumber) {
+                    sequence.push("?");
+                } else {
+                    sequence.push(tableNumber * k);
+                }
+            }
+            questions.push({ table: tableNumber, sequence: sequence, correctAnswer: correctAnswer });
+        }
+    }
+
+    let currentQuestion = 0;
+    let correctAnswers = 0;
+    let timer;
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function createQuestionRow(question) {
+        const row = document.createElement("tr");
+        for (let i = 0; i < question.sequence.length; i++) {
+            const cell = document.createElement("td");
+            if (question.sequence[i] === "?") {
+                const input = document.createElement("input");
+                input.type = "text";
+                input.addEventListener("keydown", function(event) {
+                    if (event.key === "Enter") {
+                        checkAnswer(parseInt(input.value), question);
+                    }
+                });
+                cell.appendChild(input);
+            } else {
+                cell.textContent = question.sequence[i];
+            }
+            row.appendChild(cell);
+        }
+        return row;
+    }
+
+    function checkAnswer(answer, question) {
+        if (answer === question.correctAnswer) {
+            correctAnswers++;
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                renderQuestion();
+            } else {
+                clearInterval(timer);
+                showScoreScreen();
+            }
+        } else {
+            const input = document.querySelector("input[type='text']");
+            input.value = ""; // Clear input field
+        }
+    }
+
+    function renderQuestion() {
+        const table = document.getElementById("timesTable");
+        table.innerHTML = ""; // Clear previous questions
+        const question = questions[currentQuestion];
+        const row = createQuestionRow(question);
+        table.appendChild(row);
+
+        // Set focus to the text input field
+        const input = row.querySelector("input[type='text']");
+        input.focus();
+    }
+
+    function updateTimerDisplay(time) {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        const display = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        document.getElementById('timeDisplay').textContent = display;
+    }
+
+    function startTimer(duration) {
+        let timer = duration;
+        setInterval(function () {
+            updateTimerDisplay(timer);
+
+            if (--timer < 0) {
+                clearInterval(timer);
+                showScoreScreen();
+            }
+        }, 1000);
+    }
+
+    function showScoreScreen() {
+        document.getElementById("timer").style.display = "none";
+        document.getElementById("scoreScreen").style.display = "block";
+        document.getElementById("score").textContent = correctAnswers;
+    }
+
+    const duration = 3 * 60; // 3 minutes
+    startTimer(duration);
+    renderQuestion();
+</script>
+</body>
+</html>
